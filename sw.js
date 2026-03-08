@@ -2,10 +2,11 @@
 // Caches only local assets — no external requests are made or cached.
 "use strict";
 
-var CACHE_NAME = "wordle-v2";
+var CACHE_NAME = "wordle-v3";
 var ASSETS = [
   "./",
   "./index.html",
+  "./game.js",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png"
