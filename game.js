@@ -1637,6 +1637,8 @@ document.getElementById("btnNewGame").addEventListener("click", function() {
       btn.dataset.armed = "";
       btn.classList.remove("armed");
       btn.textContent = "RESET STATS";
+      // Remove custom words from in-memory Set before clearing storage
+      getCustomWords().forEach(function(w) { ALL_VALID.delete(w); });
       localStorage.removeItem("wordle-stats");
       localStorage.removeItem("wordle-custom-words");
       showStatsModal(-1);

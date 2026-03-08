@@ -2,7 +2,7 @@
 // Caches only local assets — no external requests are made or cached.
 "use strict";
 
-var CACHE_NAME = "wordle-v4";
+var CACHE_NAME = "wordle-v5";
 var ASSETS = [
   "./",
   "./index.html",
@@ -35,8 +35,9 @@ self.addEventListener("activate", function(event) {
   self.clients.claim();
 });
 
-// Fetch: serve from cache only; never go to network for unknown requests.
-// This ensures the app works fully offline and makes no unexpected requests.
+// Fetch: network-first strategy — try the network for fresh assets,
+// fall back to cache when offline. This ensures users get updates
+// immediately without needing a second page load.
 self.addEventListener("fetch", function(event) {
   // Only handle same-origin GET requests
   if (event.request.method !== "GET") return;
@@ -48,19 +49,18 @@ self.addEventListener("fetch", function(event) {
   }
 
   event.respondWith(
-    caches.match(event.request).then(function(cached) {
-      if (cached) return cached;
-      // Fallback: fetch from network and cache for next time
-      return fetch(event.request).then(function(response) {
-        // Only cache successful same-origin responses
-        if (response.ok) {
-          var clone = response.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(event.request, clone);
-          });
-        }
-        return response;
-      });
+    fetch(event.request).then(function(response) {
+      // Cache successful responses for offline use
+      if (response.ok) {
+        var clone = response.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
+          cache.put(event.request, clone);
+        });
+      }
+      return response;
+    }).catch(function() {
+      // Offline: serve from cache
+      return caches.match(event.request);
     })
   );
 });
