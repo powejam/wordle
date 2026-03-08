@@ -1291,15 +1291,17 @@ let target, currentRow, currentCol, gameOver, board;
 function getStats() {
   try {
     const raw = localStorage.getItem("wordle-stats");
-    if (!raw) return { played: 0, won: 0, streak: 0, maxStreak: 0, dist: [0,0,0,0,0,0] };
+    if (!raw) return { played: 0, won: 0, streak: 0, maxStreak: 0, gaveUp: 0, dist: [0,0,0,0,0,0] };
     const s = JSON.parse(raw);
     // Validate shape to avoid corrupted data
     if (typeof s.played !== "number" || !Array.isArray(s.dist) || s.dist.length !== 6) {
-      return { played: 0, won: 0, streak: 0, maxStreak: 0, dist: [0,0,0,0,0,0] };
+      return { played: 0, won: 0, streak: 0, maxStreak: 0, gaveUp: 0, dist: [0,0,0,0,0,0] };
     }
+    // Backward compat: older stats won't have gaveUp
+    if (typeof s.gaveUp !== "number") s.gaveUp = 0;
     return s;
   } catch {
-    return { played: 0, won: 0, streak: 0, maxStreak: 0, dist: [0,0,0,0,0,0] };
+    return { played: 0, won: 0, streak: 0, maxStreak: 0, gaveUp: 0, dist: [0,0,0,0,0,0] };
   }
 }
 
@@ -1475,6 +1477,7 @@ function handleKey(key) {
     revealRow(row, results, function() {
       if (guess === target) {
         gameOver = true;
+        giveUpBtn.classList.add("hidden");
         winDance(row);
         var msgs = ["Genius","Magnificent","Impressive","Splendid","Nice","Phew"];
         showToast(msgs[row] || "Nice", 2000);
@@ -1486,6 +1489,7 @@ function handleKey(key) {
         setTimeout(function() { showStatsModal(row); }, 2200);
       } else if (row === 5) {
         gameOver = true;
+        giveUpBtn.classList.add("hidden");
         showToast(target.toUpperCase(), 3000);
         var s = getStats();
         s.played++; s.streak = 0;
@@ -1522,6 +1526,54 @@ document.addEventListener("keydown", function(e) {
   else if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key);
 });
 
+// ── Give Up ──
+var giveUpBtn = document.getElementById("btnGiveUp");
+
+function giveUp() {
+  if (gameOver) return;
+  gameOver = true;
+  giveUpBtn.classList.add("hidden");
+
+  // Fill the current row with the answer and reveal in red
+  var row = currentRow;
+  var letters = target.split("");
+  for (var c = 0; c < 5; c++) {
+    board[row][c].textContent = letters[c];
+    board[row][c].classList.add("gaveup", "reveal");
+    board[row][c].style.animationDelay = (c * 0.28) + "s";
+  }
+
+  // Update stats
+  var s = getStats();
+  s.played++;
+  s.gaveUp++;
+  s.streak = 0;
+  saveStats(s);
+
+  setTimeout(function() { showStatsModal(-1); }, 5 * 280 + 600);
+}
+
+giveUpBtn.addEventListener("click", function() {
+  // Require confirmation — first click changes label, second click gives up
+  if (giveUpBtn.dataset.armed === "1") {
+    giveUp();
+  } else {
+    giveUpBtn.dataset.armed = "1";
+    giveUpBtn.textContent = "Are you sure?";
+    giveUpBtn.style.color = "var(--gaveup)";
+    giveUpBtn.style.opacity = "1";
+    // Reset after 3 seconds if not confirmed
+    setTimeout(function() {
+      if (!gameOver) {
+        giveUpBtn.dataset.armed = "";
+        giveUpBtn.textContent = "Give Up";
+        giveUpBtn.style.color = "";
+        giveUpBtn.style.opacity = "";
+      }
+    }, 3000);
+  }
+});
+
 // ── Stats Modal ──
 function showStatsModal(lastGuess) {
   var s = getStats();
@@ -1531,9 +1583,10 @@ function showStatsModal(lastGuess) {
     '<div class="stat-box"><div class="num">' + s.played + '</div><div class="label">Played</div></div>' +
     '<div class="stat-box"><div class="num">' + pct + '</div><div class="label">Win %</div></div>' +
     '<div class="stat-box"><div class="num">' + s.streak + '</div><div class="label">Streak</div></div>' +
-    '<div class="stat-box"><div class="num">' + s.maxStreak + '</div><div class="label">Max</div></div>';
+    '<div class="stat-box"><div class="num">' + s.maxStreak + '</div><div class="label">Max</div></div>' +
+    '<div class="stat-box"><div class="num">' + s.gaveUp + '</div><div class="label">Gave Up</div></div>';
 
-  var maxDist = Math.max.apply(null, s.dist.concat([1]));
+  var maxDist = Math.max.apply(null, s.dist.concat([s.gaveUp, 1]));
   var html = "";
   for (var i = 0; i < 6; i++) {
     var w = Math.max(8, (s.dist[i] / maxDist) * 100);
@@ -1542,6 +1595,11 @@ function showStatsModal(lastGuess) {
       '</span><div class="bar' + hl + '" style="width:' + w + '%">' +
       s.dist[i] + '</div></div>';
   }
+  // Gave-up row
+  var gw = Math.max(8, (s.gaveUp / maxDist) * 100);
+  html += '<div class="bar-row"><span class="guess-num" style="color:var(--gaveup)">X</span>' +
+    '<div class="bar highlight-gaveup" style="width:' + gw + '%">' +
+    s.gaveUp + '</div></div>';
   document.getElementById("barChart").innerHTML = html;
   document.getElementById("statsModal").classList.add("open");
 }
@@ -1582,6 +1640,12 @@ function newGame() {
   Object.keys(keyState).forEach(function(k) { delete keyState[k]; });
   createBoard();
   createKeyboard();
+  // Reset give-up button
+  giveUpBtn.classList.remove("hidden");
+  giveUpBtn.dataset.armed = "";
+  giveUpBtn.textContent = "Give Up";
+  giveUpBtn.style.color = "";
+  giveUpBtn.style.opacity = "";
 }
 
 newGame();

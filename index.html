@@ -46,6 +46,7 @@
   --key-absent-text: #565758;
   --pop: #ffffff;
   --accent: #538d4e;
+  --gaveup: #dc2626;
   --tile-size: min(62px, calc((100vw - 60px) / 5));
   --tile-gap: 6px;
   /* System font stacks — no external requests */
@@ -69,6 +70,7 @@
     --key-absent-text: #ffffff;
     --pop: #1a1a1b;
     --accent: #6aaa64;
+    --gaveup: #dc2626;
   }
 }
 
@@ -150,6 +152,7 @@ header h1 {
 .tile.correct  { --reveal-bg: var(--correct); --reveal-border: var(--correct); }
 .tile.present  { --reveal-bg: var(--present); --reveal-border: var(--present); }
 .tile.absent   { --reveal-bg: var(--absent);  --reveal-border: var(--absent); }
+.tile.gaveup   { --reveal-bg: var(--gaveup);  --reveal-border: var(--gaveup); }
 
 @keyframes pop {
   0%   { transform: scale(1); }
@@ -300,7 +303,7 @@ header h1 {
 }
 
 .stat-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   gap: 12px; margin: 16px 0;
 }
 
@@ -334,6 +337,23 @@ header h1 {
   transition: width 0.6s ease;
 }
 .bar-row .bar.highlight { background: var(--accent); }
+.bar-row .bar.highlight-gaveup { background: var(--gaveup); }
+
+#btnGiveUp {
+  display: block; width: 100%; max-width: 520px;
+  padding: 8px;
+  background: none; border: none;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.72rem; font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.2s;
+  opacity: 0.6;
+}
+#btnGiveUp:hover { color: var(--gaveup); opacity: 1; }
+#btnGiveUp.hidden { display: none; }
 
 .new-game-btn {
   display: block; width: 100%;
@@ -366,6 +386,7 @@ header h1 {
 <div id="board-wrap"><div id="board"></div></div>
 <div id="toast-container"></div>
 <div id="keyboard"></div>
+<button id="btnGiveUp">Give Up</button>
 
 <!-- Help Modal -->
 <div class="modal-overlay" id="helpModal">
@@ -418,6 +439,6 @@ header h1 {
   </div>
 </div>
 
-<script src="game.js?v=2.5"></script>
+<script src="game.js?v=3"></script>
 </body>
 </html>
