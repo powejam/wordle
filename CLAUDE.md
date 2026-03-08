@@ -58,7 +58,9 @@ These must be preserved when modifying:
 
 ### Cache Versioning
 
-When changing files, bump the version in both places:
+**Always bump the version before every push**, even for minor changes. This forces the service worker to fetch fresh assets and prevents users from being served stale cached files.
+
+Bump the version in both places:
 - `sw.js`: `CACHE_NAME = "wordle-vX"`
 - `index.html`: `<script src="game.js?v=X">`
 
