@@ -31,23 +31,45 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0a0a0b;
-  --surface: #141416;
-  --border: #2a2a2e;
-  --text: #e8e6e3;
-  --text-dim: #6b6b70;
-  --correct: #38a169;
-  --present: #d69e2e;
-  --absent: #2a2a2e;
-  --key-bg: #1e1e22;
-  --key-text: #c8c8cc;
-  --pop: #f6f1eb;
-  --accent: #38a169;
+  /* Dark mode (default) */
+  --bg: #121213;
+  --surface: #1a1a1b;
+  --border: #3a3a3c;
+  --text: #ffffff;
+  --text-dim: #818384;
+  --correct: #538d4e;
+  --present: #b59f3b;
+  --absent: #3a3a3c;
+  --key-bg: #818384;
+  --key-text: #ffffff;
+  --key-absent-bg: #3a3a3c;
+  --key-absent-text: #565758;
+  --pop: #ffffff;
+  --accent: #538d4e;
   --tile-size: min(62px, calc((100vw - 60px) / 5));
   --tile-gap: 6px;
   /* System font stacks — no external requests */
   --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', 'Fira Code', 'JetBrains Mono', 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, sans-serif;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ffffff;
+    --surface: #f9f9f9;
+    --border: #d3d6da;
+    --text: #1a1a1b;
+    --text-dim: #787c7e;
+    --correct: #6aaa64;
+    --present: #c9b458;
+    --absent: #787c7e;
+    --key-bg: #d3d6da;
+    --key-text: #1a1a1b;
+    --key-absent-bg: #787c7e;
+    --key-absent-text: #ffffff;
+    --pop: #1a1a1b;
+    --accent: #6aaa64;
+  }
 }
 
 html, body {
@@ -210,7 +232,7 @@ header h1 {
 .key.wide { max-width: 68px; font-size: 0.72rem; letter-spacing: 0.04em; }
 .key.correct { background: var(--correct); color: #fff; }
 .key.present { background: var(--present); color: #fff; }
-.key.absent  { background: #18181a; color: #555; }
+.key.absent  { background: var(--key-absent-bg); color: var(--key-absent-text); }
 
 /* ── Modals ── */
 .modal-overlay {
@@ -385,6 +407,6 @@ header h1 {
   </div>
 </div>
 
-<script src="game.js?v=2"></script>
+<script src="game.js?v=2.1"></script>
 </body>
 </html>
