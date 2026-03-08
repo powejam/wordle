@@ -207,6 +207,27 @@ const EXTRA_VALID = new Set([
 
 const ALL_VALID = new Set([...SOLUTIONS, ...EXTRA_VALID]);
 
+// ── Custom Words ──
+function getCustomWords() {
+  try {
+    const raw = localStorage.getItem("wordle-custom-words");
+    if (!raw) return [];
+    const words = JSON.parse(raw);
+    return Array.isArray(words) ? words.filter(function(w) { return typeof w === "string" && w.length === 5; }) : [];
+  } catch { return []; }
+}
+
+function saveCustomWord(word) {
+  const words = getCustomWords();
+  if (!words.includes(word)) {
+    words.push(word);
+    try { localStorage.setItem("wordle-custom-words", JSON.stringify(words)); } catch {}
+  }
+  ALL_VALID.add(word);
+}
+
+getCustomWords().forEach(function(w) { ALL_VALID.add(w); });
+
 // ── Game State ──
 let target, currentRow, currentCol, gameOver, board;
 
@@ -283,12 +304,21 @@ function updateKeyboard(letter, state) {
 }
 
 // ── Toast ──
-function showToast(msg, duration) {
+function showToast(msg, duration, action) {
   duration = duration || 1500;
   const container = document.getElementById("toast-container");
   const t = document.createElement("div");
   t.className = "toast";
-  t.textContent = msg;
+  const msgSpan = document.createElement("span");
+  msgSpan.textContent = msg;
+  t.appendChild(msgSpan);
+  if (action) {
+    const btn = document.createElement("button");
+    btn.className = "toast-btn";
+    btn.textContent = action.label;
+    btn.addEventListener("click", function() { t.remove(); action.fn(); });
+    t.appendChild(btn);
+  }
   container.appendChild(t);
   setTimeout(function() {
     t.style.opacity = "0";
@@ -372,7 +402,13 @@ function handleKey(key) {
 
     if (!ALL_VALID.has(guess)) {
       shakeRow(currentRow);
-      showToast("Not in word list");
+      showToast("Not in word list", 3000, {
+        label: "Add word",
+        fn: function() {
+          saveCustomWord(guess);
+          showToast('"' + guess + '" added', 2000);
+        }
+      });
       return;
     }
 

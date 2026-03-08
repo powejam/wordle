@@ -196,6 +196,17 @@ header h1 {
   padding: 12px 24px; border-radius: 8px;
   opacity: 0; animation: toast-in 0.3s forwards;
   font-family: var(--font-mono);
+  display: flex; align-items: center; gap: 12px;
+}
+
+.toast-btn {
+  background: rgba(0,0,0,0.15);
+  border: 1px solid rgba(0,0,0,0.2);
+  color: inherit;
+  font-family: var(--font-mono);
+  font-weight: 700; font-size: 0.78rem;
+  padding: 4px 10px; border-radius: 4px;
+  cursor: pointer; white-space: nowrap;
 }
 
 @keyframes toast-in {
@@ -407,6 +418,6 @@ header h1 {
   </div>
 </div>
 
-<script src="game.js?v=2.2"></script>
+<script src="game.js?v=2.3"></script>
 </body>
 </html>
