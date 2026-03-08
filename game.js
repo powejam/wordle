@@ -14,7 +14,7 @@ const SOLUTIONS = [
   "arson","atlas","atone","attic","audio","audit","augur","aunty","avian","avoid",
   "await","awake","award","aware","awful","axial","axiom","azure","bacon","badge",
   "badly","bagel","baggy","baker","balmy","banal","banjo","barge","baron","basic",
-  "basil","basin","basis","batch","baton","beard","beast","began","begin","being",
+  "basil","basin","basis","batch","baton","beach","beard","beast","began","begin","being",
   "below","bench","berry","bible","birch","birth","black","blade","blame","bland",
   "blank","blare","blast","blaze","bleak","bleat","bleed","blend","bless","blimp",
   "blind","bliss","blitz","bloat","block","bloke","blond","blood","bloom","blown",
