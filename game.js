@@ -1628,6 +1628,31 @@ document.getElementById("btnNewGame").addEventListener("click", function() {
   newGame();
 });
 
+(function() {
+  var btn = document.getElementById("btnResetStats");
+  var resetTimer = null;
+  btn.addEventListener("click", function() {
+    if (btn.dataset.armed) {
+      clearTimeout(resetTimer);
+      btn.dataset.armed = "";
+      btn.classList.remove("armed");
+      btn.textContent = "RESET STATS";
+      localStorage.removeItem("wordle-stats");
+      localStorage.removeItem("wordle-custom-words");
+      showStatsModal(-1);
+    } else {
+      btn.dataset.armed = "1";
+      btn.classList.add("armed");
+      btn.textContent = "CONFIRM RESET?";
+      resetTimer = setTimeout(function() {
+        btn.dataset.armed = "";
+        btn.classList.remove("armed");
+        btn.textContent = "RESET STATS";
+      }, 3000);
+    }
+  });
+})();
+
 // ── New Game ──
 function newGame() {
   // Use crypto.getRandomValues for unbiased random word selection

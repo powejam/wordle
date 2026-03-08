@@ -367,6 +367,19 @@ header h1 {
 }
 .new-game-btn:hover { background: #2f8c59; }
 
+.reset-stats-btn {
+  display: block; width: 100%;
+  margin-top: 10px; padding: 10px;
+  background: none; border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-weight: 700; font-size: 0.8rem;
+  letter-spacing: 0.08em; cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.reset-stats-btn:hover { color: var(--text); border-color: var(--text-dim); }
+.reset-stats-btn.armed { color: var(--gaveup); border-color: var(--gaveup); }
+
 .privacy-note {
   margin-top: 20px; padding-top: 14px;
   border-top: 1px solid var(--border);
@@ -436,9 +449,10 @@ header h1 {
     <h2 style="margin-top:18px;">GUESS DISTRIBUTION</h2>
     <div class="bar-chart" id="barChart"></div>
     <button class="new-game-btn" id="btnNewGame">NEW GAME</button>
+    <button class="reset-stats-btn" id="btnResetStats">RESET STATS</button>
   </div>
 </div>
 
-<script src="game.js?v=3"></script>
+<script src="game.js?v=4"></script>
 </body>
 </html>
