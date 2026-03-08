@@ -1,0 +1,65 @@
+// Wordle PWA Service Worker
+// Caches only local assets — no external requests are made or cached.
+"use strict";
+
+var CACHE_NAME = "wordle-v2";
+var ASSETS = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./icon-192.png",
+  "./icon-512.png"
+];
+
+// Install: pre-cache all local assets
+self.addEventListener("install", function(event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.addAll(ASSETS);
+    })
+  );
+  self.skipWaiting();
+});
+
+// Activate: purge old caches
+self.addEventListener("activate", function(event) {
+  event.waitUntil(
+    caches.keys().then(function(keys) {
+      return Promise.all(
+        keys.filter(function(k) { return k !== CACHE_NAME; })
+            .map(function(k) { return caches.delete(k); })
+      );
+    })
+  );
+  self.clients.claim();
+});
+
+// Fetch: serve from cache only; never go to network for unknown requests.
+// This ensures the app works fully offline and makes no unexpected requests.
+self.addEventListener("fetch", function(event) {
+  // Only handle same-origin GET requests
+  if (event.request.method !== "GET") return;
+
+  var url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) {
+    // Block any cross-origin requests — the app should make none
+    return;
+  }
+
+  event.respondWith(
+    caches.match(event.request).then(function(cached) {
+      if (cached) return cached;
+      // Fallback: fetch from network and cache for next time
+      return fetch(event.request).then(function(response) {
+        // Only cache successful same-origin responses
+        if (response.ok) {
+          var clone = response.clone();
+          caches.open(CACHE_NAME).then(function(cache) {
+            cache.put(event.request, clone);
+          });
+        }
+        return response;
+      });
+    })
+  );
+});
