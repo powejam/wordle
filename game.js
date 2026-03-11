@@ -1291,17 +1291,18 @@ let target, currentRow, currentCol, gameOver, board;
 function getStats() {
   try {
     const raw = localStorage.getItem("wordle-stats");
-    if (!raw) return { played: 0, won: 0, streak: 0, maxStreak: 0, gaveUp: 0, dist: [0,0,0,0,0,0] };
+    if (!raw) return { played: 0, won: 0, streak: 0, maxStreak: 0, gaveUp: 0, lost: 0, dist: [0,0,0,0,0,0] };
     const s = JSON.parse(raw);
     // Validate shape to avoid corrupted data
     if (typeof s.played !== "number" || !Array.isArray(s.dist) || s.dist.length !== 6) {
-      return { played: 0, won: 0, streak: 0, maxStreak: 0, gaveUp: 0, dist: [0,0,0,0,0,0] };
+      return { played: 0, won: 0, streak: 0, maxStreak: 0, gaveUp: 0, lost: 0, dist: [0,0,0,0,0,0] };
     }
-    // Backward compat: older stats won't have gaveUp
+    // Backward compat: older stats won't have gaveUp or lost
     if (typeof s.gaveUp !== "number") s.gaveUp = 0;
+    if (typeof s.lost !== "number") s.lost = 0;
     return s;
   } catch {
-    return { played: 0, won: 0, streak: 0, maxStreak: 0, gaveUp: 0, dist: [0,0,0,0,0,0] };
+    return { played: 0, won: 0, streak: 0, maxStreak: 0, gaveUp: 0, lost: 0, dist: [0,0,0,0,0,0] };
   }
 }
 
@@ -1585,7 +1586,7 @@ function handleKey(key) {
         giveUpBtn.classList.add("hidden");
         showToast(target.toUpperCase(), 3000);
         var s = getStats();
-        s.played++; s.streak = 0;
+        s.played++; s.lost++; s.streak = 0;
         saveStats(s);
         saveGameState();
         setTimeout(function() { showStatsModal(-1); }, 2200);
@@ -1681,9 +1682,10 @@ function showStatsModal(lastGuess) {
     '<div class="stat-box"><div class="num">' + pct + '</div><div class="label">Win %</div></div>' +
     '<div class="stat-box"><div class="num">' + s.streak + '</div><div class="label">Streak</div></div>' +
     '<div class="stat-box"><div class="num">' + s.maxStreak + '</div><div class="label">Max</div></div>' +
+    '<div class="stat-box"><div class="num">' + s.lost + '</div><div class="label">Lost</div></div>' +
     '<div class="stat-box"><div class="num">' + s.gaveUp + '</div><div class="label">Gave Up</div></div>';
 
-  var maxDist = Math.max.apply(null, s.dist.concat([s.gaveUp, 1]));
+  var maxDist = Math.max.apply(null, s.dist.concat([s.gaveUp, s.lost, 1]));
   var html = "";
   for (var i = 0; i < 6; i++) {
     var w = Math.max(8, (s.dist[i] / maxDist) * 100);
@@ -1692,6 +1694,11 @@ function showStatsModal(lastGuess) {
       '</span><div class="bar' + hl + '" style="width:' + w + '%">' +
       s.dist[i] + '</div></div>';
   }
+  // Lost row
+  var lw = Math.max(8, (s.lost / maxDist) * 100);
+  html += '<div class="bar-row"><span class="guess-num" style="color:var(--text-dim)">L</span>' +
+    '<div class="bar highlight-lost" style="width:' + lw + '%">' +
+    s.lost + '</div></div>';
   // Gave-up row
   var gw = Math.max(8, (s.gaveUp / maxDist) * 100);
   html += '<div class="bar-row"><span class="guess-num" style="color:var(--gaveup)">X</span>' +

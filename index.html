@@ -303,7 +303,7 @@ header h1 {
 }
 
 .stat-grid {
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  display: grid; grid-template-columns: repeat(6, 1fr);
   gap: 12px; margin: 16px 0;
 }
 
@@ -337,6 +337,7 @@ header h1 {
   transition: width 0.6s ease;
 }
 .bar-row .bar.highlight { background: var(--accent); }
+.bar-row .bar.highlight-lost { background: var(--present); }
 .bar-row .bar.highlight-gaveup { background: var(--gaveup); }
 
 #btnGiveUp {
@@ -453,6 +454,6 @@ header h1 {
   </div>
 </div>
 
-<script src="game.js?v=6"></script>
+<script src="game.js?v=7"></script>
 </body>
 </html>
