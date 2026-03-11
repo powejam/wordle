@@ -1309,6 +1309,97 @@ function saveStats(s) {
   try { localStorage.setItem("wordle-stats", JSON.stringify(s)); } catch {}
 }
 
+// ── Game State Persistence ──
+function saveGameState() {
+  try {
+    var guesses = [];
+    for (var r = 0; r < currentRow; r++) {
+      var word = "";
+      var results = [];
+      for (var c = 0; c < 5; c++) {
+        word += board[r][c].textContent;
+        var cl = board[r][c].classList;
+        results.push(cl.contains("correct") ? "correct" :
+                     cl.contains("present") ? "present" :
+                     cl.contains("gaveup")  ? "gaveup"  : "absent");
+      }
+      guesses.push({ word: word, results: results });
+    }
+    // Capture in-progress letters on the current row
+    var pending = "";
+    if (!gameOver) {
+      for (var c = 0; c < currentCol; c++) {
+        pending += board[currentRow][c].textContent;
+      }
+    }
+    localStorage.setItem("wordle-game", JSON.stringify({
+      target: target,
+      guesses: guesses,
+      pending: pending,
+      gameOver: gameOver
+    }));
+  } catch {}
+}
+
+function loadGameState() {
+  try {
+    var raw = localStorage.getItem("wordle-game");
+    if (!raw) return false;
+    var state = JSON.parse(raw);
+    if (!state.target || !Array.isArray(state.guesses)) return false;
+    // Validate target is still a real word
+    if (!ALL_VALID.has(state.target)) return false;
+
+    target = state.target;
+    gameOver = !!state.gameOver;
+    createBoard();
+    createKeyboard();
+
+    // Restore completed guesses — no animation
+    for (var r = 0; r < state.guesses.length; r++) {
+      var g = state.guesses[r];
+      for (var c = 0; c < 5; c++) {
+        board[r][c].textContent = g.word[c];
+        board[r][c].classList.add("filled", g.results[c], "reveal");
+        // No animation delay on restore
+        board[r][c].style.animationDuration = "0s";
+        updateKeyboard(g.word[c], g.results[c] === "gaveup" ? "absent" : g.results[c]);
+      }
+    }
+
+    currentRow = state.guesses.length;
+    currentCol = 0;
+
+    // Restore in-progress letters
+    if (!gameOver && state.pending) {
+      for (var c = 0; c < state.pending.length; c++) {
+        board[currentRow][c].textContent = state.pending[c];
+        board[currentRow][c].classList.add("filled");
+      }
+      currentCol = state.pending.length;
+    }
+
+    // Hide give-up button if game is over
+    if (gameOver) {
+      giveUpBtn.classList.add("hidden");
+    } else {
+      giveUpBtn.classList.remove("hidden");
+      giveUpBtn.dataset.armed = "";
+      giveUpBtn.textContent = "Give Up";
+      giveUpBtn.style.color = "";
+      giveUpBtn.style.opacity = "";
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function clearGameState() {
+  try { localStorage.removeItem("wordle-game"); } catch {}
+}
+
 // ── Build Board ──
 const boardEl = document.getElementById("board");
 function createBoard() {
@@ -1446,6 +1537,7 @@ function handleKey(key) {
       board[currentRow][currentCol].textContent = "";
       board[currentRow][currentCol].classList.remove("filled");
     }
+    saveGameState();
     return;
   }
 
@@ -1486,6 +1578,7 @@ function handleKey(key) {
         s.maxStreak = Math.max(s.maxStreak, s.streak);
         s.dist[row]++;
         saveStats(s);
+        saveGameState();
         setTimeout(function() { showStatsModal(row); }, 2200);
       } else if (row === 5) {
         gameOver = true;
@@ -1494,12 +1587,14 @@ function handleKey(key) {
         var s = getStats();
         s.played++; s.streak = 0;
         saveStats(s);
+        saveGameState();
         setTimeout(function() { showStatsModal(-1); }, 2200);
       }
     });
 
     currentRow++;
     currentCol = 0;
+    saveGameState();
     return;
   }
 
@@ -1508,6 +1603,7 @@ function handleKey(key) {
     board[currentRow][currentCol].textContent = key.toLowerCase();
     board[currentRow][currentCol].classList.add("filled");
     currentCol++;
+    saveGameState();
   }
 }
 
@@ -1549,6 +1645,7 @@ function giveUp() {
   s.gaveUp++;
   s.streak = 0;
   saveStats(s);
+  saveGameState();
 
   setTimeout(function() { showStatsModal(-1); }, 5 * 280 + 600);
 }
@@ -1641,6 +1738,7 @@ document.getElementById("btnNewGame").addEventListener("click", function() {
       getCustomWords().forEach(function(w) { ALL_VALID.delete(w); });
       localStorage.removeItem("wordle-stats");
       localStorage.removeItem("wordle-custom-words");
+      clearGameState();
       showStatsModal(-1);
     } else {
       btn.dataset.armed = "1";
@@ -1657,6 +1755,7 @@ document.getElementById("btnNewGame").addEventListener("click", function() {
 
 // ── New Game ──
 function newGame() {
+  clearGameState();
   // Use crypto.getRandomValues for unbiased random word selection
   var arr = new Uint32Array(1);
   crypto.getRandomValues(arr);
@@ -1673,9 +1772,13 @@ function newGame() {
   giveUpBtn.textContent = "Give Up";
   giveUpBtn.style.color = "";
   giveUpBtn.style.opacity = "";
+  saveGameState();
 }
 
-newGame();
+// Try to restore a saved game; fall back to a new game
+if (!loadGameState()) {
+  newGame();
+}
 
 // ── Service Worker Registration ──
 if ("serviceWorker" in navigator) {

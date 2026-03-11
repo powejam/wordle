@@ -36,6 +36,7 @@ A static PWA with no external dependencies or build system.
 - **`revealRow()`**: Staggered tile-flip animation (280ms per column)
 - **Give Up**: A "Give Up" button below the keyboard. First click arms it ("Are you sure?" in red, 3-second timeout), second click confirms. On give-up: fills the current row with the answer in red tiles, records `gaveUp++` in stats, resets streak. The button is hidden once the game ends (win, loss, or give-up).
 - **Stats**: `localStorage` key `wordle-stats` stores `{ played, won, streak, maxStreak, gaveUp, dist }` where `dist` is an array of 6 guess-count buckets. The `gaveUp` field was added in v3 with backward compatibility (defaults to 0 if absent). Stats modal shows 5 summary boxes (Played, Win %, Streak, Max, Gave Up) and a guess distribution bar chart with a red "X" row for give-ups.
+- **Game State Persistence**: `localStorage` key `wordle-game` stores `{ target, guesses, pending, gameOver }` where `guesses` is an array of `{ word, results }` for completed rows and `pending` is any in-progress letters on the current row. State is saved after every keystroke (letter, backspace, guess submission, win, loss, give-up). On page load, `loadGameState()` restores the board without animations if a saved game exists; otherwise `newGame()` starts fresh. Clicking "New Game" calls `clearGameState()` before starting. Resetting stats also clears the saved game.
 
 ### Keyboard Layout
 
