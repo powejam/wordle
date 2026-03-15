@@ -36,7 +36,8 @@ A static PWA with no external dependencies or build system.
 - **`revealRow()`**: Staggered tile-flip animation (280ms per column)
 - **Give Up**: A "Give Up" button below the keyboard. First click arms it ("Are you sure?" in red, 3-second timeout), second click confirms. On give-up: fills the current row with the answer in red tiles, records `gaveUp++` in stats, resets streak. The button is hidden once the game ends (win, loss, or give-up).
 - **Stats**: `localStorage` key `wordle-stats` stores `{ played, won, streak, maxStreak, gaveUp, lost, dist }` where `dist` is an array of 6 guess-count buckets. The `gaveUp` field was added in v3 and `lost` in v7, both with backward compatibility (default to 0 if absent). Stats modal shows 6 summary boxes (Played, Win %, Streak, Max, Lost, Gave Up) and a guess distribution bar chart with an amber "L" row for losses and a red "X" row for give-ups.
-- **Game State Persistence**: `localStorage` key `wordle-game` stores `{ target, guesses, pending, gameOver }` where `guesses` is an array of `{ word, results }` for completed rows and `pending` is any in-progress letters on the current row. State is saved after every keystroke (letter, backspace, guess submission, win, loss, give-up). On page load, `loadGameState()` restores the board without animations if a saved game exists; otherwise `newGame()` starts fresh. Clicking "New Game" calls `clearGameState()` before starting. Resetting stats also clears the saved game.
+- **Game State Persistence**: `localStorage` key `wordle-game` stores `{ target, guesses, pending, cursorCol, gameOver }` where `guesses` is an array of `{ word, results }` for completed rows, `pending` is a 5-element array of letters (empty string for unfilled slots) representing the current row, and `cursorCol` is the active cursor position. Legacy saves with `pending` as a string are handled on restore. State is saved after every keystroke (letter, backspace, guess submission, win, loss, give-up). On page load, `loadGameState()` restores the board without animations if a saved game exists; otherwise `newGame()` starts fresh. Clicking "New Game" calls `clearGameState()` before starting. Resetting stats also clears the saved game.
+- **Positional Cursor**: `cursorCol` tracks the active tile in the current row. Tapping any tile in the active row moves the cursor there freely (gaps allowed). Typing writes at `cursorCol` and advances one step right (clamped at tile 4). Backspace clears the tile left of the cursor and moves left. Enter requires all 5 slots filled. `setCursor(col)` manages the `cursor-pos` CSS class (blinking border) and keeps `cursorCol`/`currentCol` in sync. Cursor is cleared when `gameOver` becomes true.
 
 ### Keyboard Layout
 
@@ -62,7 +63,7 @@ These must be preserved when modifying:
 **Always bump the version before every push**, even for minor changes. This forces the service worker to fetch fresh assets and prevents users from being served stale cached files.
 
 Bump the version in both places:
-- `sw.js`: `CACHE_NAME = "wordle-vX"`
+- `sw.js`: `CACHE_NAME = "wordle-v8"`
 - `index.html`: `<script src="game.js?v=X">`
 
 ### Deployment

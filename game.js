@@ -1286,7 +1286,7 @@ function saveCustomWord(word) {
 getCustomWords().forEach(function(w) { ALL_VALID.add(w); });
 
 // ── Game State ──
-let target, currentRow, currentCol, gameOver, board;
+let target, currentRow, currentCol, cursorCol, gameOver, board;
 
 function getStats() {
   try {
@@ -1326,17 +1326,18 @@ function saveGameState() {
       }
       guesses.push({ word: word, results: results });
     }
-    // Capture in-progress letters on the current row
-    var pending = "";
+    // Capture in-progress letters on the current row (all 5 slots, empty string for unfilled)
+    var pending = ["", "", "", "", ""];
     if (!gameOver) {
-      for (var c = 0; c < currentCol; c++) {
-        pending += board[currentRow][c].textContent;
+      for (var c = 0; c < 5; c++) {
+        pending[c] = board[currentRow][c].textContent || "";
       }
     }
     localStorage.setItem("wordle-game", JSON.stringify({
       target: target,
       guesses: guesses,
       pending: pending,
+      cursorCol: cursorCol || 0,
       gameOver: gameOver
     }));
   } catch {}
@@ -1370,14 +1371,28 @@ function loadGameState() {
 
     currentRow = state.guesses.length;
     currentCol = 0;
+    cursorCol = 0;
 
-    // Restore in-progress letters
+    // Restore in-progress letters — handle both legacy string and new 5-slot array
     if (!gameOver && state.pending) {
-      for (var c = 0; c < state.pending.length; c++) {
-        board[currentRow][c].textContent = state.pending[c];
-        board[currentRow][c].classList.add("filled");
+      var pendingSlots;
+      if (Array.isArray(state.pending)) {
+        pendingSlots = state.pending;
+      } else {
+        // Legacy: string of chars from left, pad to 5 with empty strings
+        pendingSlots = state.pending.split("").concat(["","","","",""]).slice(0, 5);
       }
-      currentCol = state.pending.length;
+      for (var c = 0; c < 5; c++) {
+        if (pendingSlots[c]) {
+          board[currentRow][c].textContent = pendingSlots[c];
+          board[currentRow][c].classList.add("filled");
+        }
+      }
+      // Restore cursor position, defaulting to 0
+      cursorCol = (typeof state.cursorCol === "number" && state.cursorCol >= 0 && state.cursorCol <= 4)
+        ? state.cursorCol : 0;
+      currentCol = cursorCol;
+      setCursor(cursorCol);
     }
 
     // Hide give-up button if game is over
@@ -1411,6 +1426,15 @@ function createBoard() {
     for (let c = 0; c < 5; c++) {
       const tile = document.createElement("div");
       tile.className = "tile";
+      // Allow tapping any tile in the active row to reposition cursor
+      tile.addEventListener("click", (function(row, col) {
+        return function() {
+          if (gameOver || row !== currentRow) return;
+          cursorCol = col;
+          currentCol = col;
+          setCursor(col);
+        };
+      })(r, c));
       boardEl.appendChild(tile);
       board[r][c] = tile;
     }
@@ -1529,21 +1553,40 @@ function winDance(row) {
 }
 
 // ── Input Handler ──
+// ── Cursor management ──
+function setCursor(col) {
+  if (board[currentRow]) {
+    for (var c = 0; c < 5; c++) {
+      board[currentRow][c].classList.remove("cursor-pos");
+    }
+  }
+  cursorCol = col;
+  currentCol = col;
+  if (!gameOver && board[currentRow]) {
+    board[currentRow][col].classList.add("cursor-pos");
+  }
+}
+
 function handleKey(key) {
   if (gameOver) return;
 
   if (key === "⌫" || key === "Backspace") {
-    if (currentCol > 0) {
-      currentCol--;
-      board[currentRow][currentCol].textContent = "";
-      board[currentRow][currentCol].classList.remove("filled");
+    if (cursorCol > 0) {
+      board[currentRow][cursorCol - 1].textContent = "";
+      board[currentRow][cursorCol - 1].classList.remove("filled");
+      setCursor(cursorCol - 1);
     }
     saveGameState();
     return;
   }
 
   if (key === "Enter") {
-    if (currentCol < 5) {
+    // Require all 5 slots filled (gaps not allowed)
+    let allFilled = true;
+    for (let c = 0; c < 5; c++) {
+      if (!board[currentRow][c].textContent) { allFilled = false; break; }
+    }
+    if (!allFilled) {
       shakeRow(currentRow);
       showToast("Not enough letters");
       return;
@@ -1570,6 +1613,7 @@ function handleKey(key) {
     revealRow(row, results, function() {
       if (guess === target) {
         gameOver = true;
+        setCursor(0); // clears cursor indicator (gameOver=true so won't re-add)
         giveUpBtn.classList.add("hidden");
         winDance(row);
         var msgs = ["Genius","Magnificent","Impressive","Splendid","Nice","Phew"];
@@ -1583,6 +1627,7 @@ function handleKey(key) {
         setTimeout(function() { showStatsModal(row); }, 2200);
       } else if (row === 5) {
         gameOver = true;
+        setCursor(0); // clears cursor indicator
         giveUpBtn.classList.add("hidden");
         showToast(target.toUpperCase(), 3000);
         var s = getStats();
@@ -1595,15 +1640,17 @@ function handleKey(key) {
 
     currentRow++;
     currentCol = 0;
+    cursorCol = 0;
+    if (!gameOver) setCursor(0);
     saveGameState();
     return;
   }
 
-  // Letter
-  if (currentCol < 5 && /^[a-z]$/i.test(key)) {
-    board[currentRow][currentCol].textContent = key.toLowerCase();
-    board[currentRow][currentCol].classList.add("filled");
-    currentCol++;
+  // Letter — write at cursor position, advance right (clamp at 4)
+  if (/^[a-z]$/i.test(key)) {
+    board[currentRow][cursorCol].textContent = key.toLowerCase();
+    board[currentRow][cursorCol].classList.add("filled");
+    setCursor(Math.min(cursorCol + 1, 4));
     saveGameState();
   }
 }
@@ -1629,6 +1676,7 @@ var giveUpBtn = document.getElementById("btnGiveUp");
 function giveUp() {
   if (gameOver) return;
   gameOver = true;
+  setCursor(0); // clears cursor indicator
   giveUpBtn.classList.add("hidden");
 
   // Fill the current row with the answer and reveal in red
@@ -1769,10 +1817,12 @@ function newGame() {
   target = SOLUTIONS[arr[0] % SOLUTIONS.length];
   currentRow = 0;
   currentCol = 0;
+  cursorCol = 0;
   gameOver = false;
   Object.keys(keyState).forEach(function(k) { delete keyState[k]; });
   createBoard();
   createKeyboard();
+  setCursor(0);
   // Reset give-up button
   giveUpBtn.classList.remove("hidden");
   giveUpBtn.dataset.armed = "";

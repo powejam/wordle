@@ -145,7 +145,21 @@ header h1 {
 
 .tile.filled {
   border-color: #555;
+
   animation: pop 0.08s ease;
+}
+
+@keyframes cursor-blink {
+  0%, 49% { border-color: var(--text); }
+  50%, 100% { border-color: var(--border); }
+}
+.tile.cursor-pos {
+  border-color: var(--text);
+  animation: cursor-blink 1s step-end infinite;
+}
+.tile.filled.cursor-pos {
+  border-color: var(--text);
+  animation: cursor-blink 1s step-end infinite;
 }
 
 .tile.reveal { animation: flip 0.5s ease forwards; }
@@ -454,6 +468,6 @@ header h1 {
   </div>
 </div>
 
-<script src="game.js?v=7"></script>
+<script src="game.js?v=8"></script>
 </body>
 </html>
