@@ -1571,9 +1571,13 @@ function handleKey(key) {
   if (gameOver) return;
 
   if (key === "⌫" || key === "Backspace") {
-    if (cursorCol > 0) {
-      board[currentRow][cursorCol - 1].textContent = "";
-      board[currentRow][cursorCol - 1].classList.remove("filled");
+    if (board[currentRow][cursorCol].textContent !== "") {
+      // Delete the character at the cursor position
+      board[currentRow][cursorCol].textContent = "";
+      board[currentRow][cursorCol].classList.remove("filled");
+      // cursor stays in place
+    } else if (cursorCol > 0) {
+      // Current tile already empty — move cursor left
       setCursor(cursorCol - 1);
     }
     saveGameState();
