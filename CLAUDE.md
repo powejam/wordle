@@ -63,7 +63,7 @@ These must be preserved when modifying:
 **Always bump the version before every push**, even for minor changes. This forces the service worker to fetch fresh assets and prevents users from being served stale cached files.
 
 Bump the version in both places:
-- `sw.js`: `CACHE_NAME = "wordle-v10"`
+- `sw.js`: `CACHE_NAME = "wordle-v11"`
 - `index.html`: `<script src="game.js?v=X">`
 
 ### Deployment
